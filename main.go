@@ -48,7 +48,7 @@ func main() {
 		filename = args[0]
 		setErr := bump_version.SetInFile(version, filename)
 		if setErr != nil {
-			os.Stderr.WriteString(setErr.Error())
+			os.Stderr.WriteString(setErr.Error() + "\n")
 			os.Exit(2)
 		}
 	} else {
@@ -62,7 +62,7 @@ func main() {
 		var err error
 		version, err = bump_version.BumpInFile(bump_version.VersionType(versionTypeStr), filename)
 		if err != nil {
-			os.Stderr.WriteString(err.Error())
+			os.Stderr.WriteString(err.Error() + "\n")
 			os.Exit(2)
 		}
 	}
