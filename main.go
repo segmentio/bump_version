@@ -6,10 +6,10 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/Shyp/bump_version/lib"
+	"github.com/kevinburke/bump_version/lib"
 )
 
-const VERSION = "1.3"
+const VERSION = "1.2"
 
 func usage() {
 	fmt.Fprintf(os.Stderr, "Usage: bump_version [--version=<version>] [<major|minor|patch>] <filename>\n")

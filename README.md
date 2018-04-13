@@ -7,7 +7,7 @@ This is a tool for bumping version numbers in Go files.
 For the moment, you'll need a working Go installation.
 
 ```
-go get github.com/Shyp/bump_version
+go get github.com/kevinburke/bump_version
 ```
 
 That will install the `bump_version` binary to your `$GOPATH`.

@@ -1,4 +1,4 @@
-go_import_path: github.com/Shyp/bump_version
+go_import_path: github.com/kevinburke/bump_version
 language: go
 
 go:
