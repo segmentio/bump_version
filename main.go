@@ -25,36 +25,34 @@ func runCommand(binary string, args ...string) {
 	}
 }
 
-var vsn = flag.String("version", "", "Set this version in the file (don't increment whatever version is present)")
-
-func main() {
-	flag.Usage = usage
-	flag.Parse()
-	args := flag.Args()
+func _main(flags *flag.FlagSet) int {
+	var vsn = flags.String("version", "", "Set this version in the file (don't increment whatever version is present)")
+	flags.Parse(os.Args[1:])
+	args := flags.Args()
 	var filename string
 	var version *bump_version.Version
 	if *vsn != "" {
 		// no "minor"
 		if len(args) != 1 {
-			flag.Usage()
-			return
+			flags.Usage()
+			return 2
 		}
 		var err error
 		version, err = bump_version.Parse(*vsn)
 		if err != nil {
 			os.Stderr.WriteString(err.Error())
-			os.Exit(2)
+			return 2
 		}
 		filename = args[0]
 		setErr := bump_version.SetInFile(version, filename)
 		if setErr != nil {
 			os.Stderr.WriteString(setErr.Error() + "\n")
-			os.Exit(2)
+			return 2
 		}
 	} else {
 		if len(args) != 2 {
-			flag.Usage()
-			return
+			flags.Usage()
+			return 2
 		}
 		versionTypeStr := args[0]
 		filename = args[1]
@@ -63,11 +61,17 @@ func main() {
 		version, err = bump_version.BumpInFile(bump_version.VersionType(versionTypeStr), filename)
 		if err != nil {
 			os.Stderr.WriteString(err.Error() + "\n")
-			os.Exit(2)
+			return 2
 		}
 	}
 	runCommand("git", "add", filename)
 	runCommand("git", "commit", "-m", version.String())
 	runCommand("git", "tag", version.String(), "--annotate", "--message", version.String())
 	os.Stdout.WriteString(version.String() + "\n")
+	return 0
+}
+
+func main() {
+	flag.Usage = usage
+	os.Exit(_main(flag.CommandLine))
 }
