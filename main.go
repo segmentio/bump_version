@@ -1,3 +1,5 @@
+// The bump_version binary makes it easy to increment version constants in a Go
+// source file.
 package main
 
 import (
@@ -6,13 +8,11 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/kevinburke/bump_version/lib"
+	bump_version "github.com/kevinburke/bump_version/lib"
 )
 
-const VERSION = "1.3"
-
 func usage() {
-	fmt.Fprintf(os.Stderr, "Usage: bump_version [--version=<version>] [<major|minor|patch>] <filename>\n")
+	fmt.Fprintf(os.Stderr, "usage: bump_version [--version=<version>] [<major|minor|patch>] <filename>\n")
 	flag.PrintDefaults()
 }
 
@@ -25,12 +25,15 @@ func runCommand(binary string, args ...string) {
 	}
 }
 
-func _main(flags *flag.FlagSet) int {
+func _main(flags *flag.FlagSet, cmdArgs []string) int {
 	var vsn = flags.String("version", "", "Set this version in the file (don't increment whatever version is present)")
-	flags.Parse(os.Args[1:])
+	if err := flags.Parse(cmdArgs); err != nil {
+		flags.Usage()
+		return 2
+	}
 	args := flags.Args()
 	var filename string
-	var version *bump_version.Version
+	var version bump_version.Version
 	if *vsn != "" {
 		// no "minor"
 		if len(args) != 1 {
@@ -73,5 +76,5 @@ func _main(flags *flag.FlagSet) int {
 
 func main() {
 	flag.Usage = usage
-	os.Exit(_main(flag.CommandLine))
+	os.Exit(_main(flag.CommandLine, os.Args[1:]))
 }

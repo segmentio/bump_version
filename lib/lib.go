@@ -1,3 +1,5 @@
+// Package bump_version makes it easy to parse and update version numbers in Go
+// source files.
 package bump_version
 
 import (
@@ -12,11 +14,22 @@ import (
 	"strings"
 )
 
+const VERSION = "1.3"
+
 type VersionType string
 
 const Major = VersionType("major")
 const Minor = VersionType("minor")
 const Patch = VersionType("patch")
+
+func ValidVersionType(vtype VersionType) bool {
+	switch vtype {
+	case Major, Minor, Patch:
+		return true
+	default:
+		return false
+	}
+}
 
 type Version struct {
 	Major int64
@@ -24,7 +37,7 @@ type Version struct {
 	Patch int64
 }
 
-func (v *Version) String() string {
+func (v Version) String() string {
 	if v.Major >= 0 && v.Minor >= 0 && v.Patch >= 0 {
 		return fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Patch)
 	} else if v.Major >= 0 && v.Minor >= 0 {
@@ -42,18 +55,18 @@ func (v *Version) String() string {
 //
 // If a field is omitted from the string version (e.g. "0.2"), it's stored in
 // the Version string as the integer -1.
-func Parse(version string) (*Version, error) {
+func Parse(version string) (Version, error) {
 	if len(version) == 0 {
-		return nil, errors.New("Empty version string")
+		return Version{}, errors.New("bump_version: empty version string")
 	}
 
 	parts := strings.SplitN(version, ".", 3)
 	if len(parts) == 1 {
 		major, err := strconv.ParseInt(parts[0], 10, 64)
 		if err != nil {
-			return nil, err
+			return Version{}, err
 		}
-		return &Version{
+		return Version{
 			Major: major,
 			Minor: -1,
 			Patch: -1,
@@ -62,13 +75,13 @@ func Parse(version string) (*Version, error) {
 	if len(parts) == 2 {
 		major, err := strconv.ParseInt(parts[0], 10, 64)
 		if err != nil {
-			return nil, err
+			return Version{}, err
 		}
 		minor, err := strconv.ParseInt(parts[1], 10, 64)
 		if err != nil {
-			return nil, err
+			return Version{}, err
 		}
-		return &Version{
+		return Version{
 			Major: major,
 			Minor: minor,
 			Patch: -1,
@@ -77,35 +90,31 @@ func Parse(version string) (*Version, error) {
 	if len(parts) == 3 {
 		major, err := strconv.ParseInt(parts[0], 10, 64)
 		if err != nil {
-			return nil, err
+			return Version{}, err
 		}
 		minor, err := strconv.ParseInt(parts[1], 10, 64)
 		if err != nil {
-			return nil, err
+			return Version{}, err
 		}
 		patchParts := strings.SplitN(parts[2], "-", 2)
 		patch, err := strconv.ParseInt(patchParts[0], 10, 64)
 		if err != nil {
-			return nil, err
+			return Version{}, err
 		}
-		return &Version{
+		return Version{
 			Major: major,
 			Minor: minor,
 			Patch: patch,
 		}, nil
 	}
-	return nil, fmt.Errorf("Invalid version string: %s", version)
+	return Version{}, fmt.Errorf("bump_version: invalid version string: %q", version)
 }
 
-// changeVersion takes a basic literal representing a string version, and
-// increments the version number per the given VersionType.
-func changeVersion(vtype VersionType, value string) (*Version, error) {
-	versionNoQuotes := strings.Replace(value, "\"", "", -1)
-	version, err := Parse(versionNoQuotes)
-	if err != nil {
-		return nil, err
-	}
-	if vtype == Major {
+// Bump increments the version number by the given vtype (major/minor/patch).
+// Bump panics if vtype is not a known VersionType.
+func Bump(version Version, vtype VersionType) Version {
+	switch vtype {
+	case Major:
 		version.Major++
 		if version.Minor != -1 {
 			version.Minor = 0
@@ -113,7 +122,8 @@ func changeVersion(vtype VersionType, value string) (*Version, error) {
 		if version.Patch != -1 {
 			version.Patch = 0
 		}
-	} else if vtype == Minor {
+		return version
+	case Minor:
 		if version.Minor == -1 {
 			version.Minor = 0
 		}
@@ -121,15 +131,27 @@ func changeVersion(vtype VersionType, value string) (*Version, error) {
 			version.Patch = 0
 		}
 		version.Minor++
-	} else if vtype == Patch {
+		return version
+	case Patch:
 		if version.Patch == -1 {
 			version.Patch = 0
 		}
 		version.Patch++
-	} else {
-		return nil, fmt.Errorf("Invalid version type: %s", vtype)
+		return version
+	default:
+		panic(fmt.Sprintf("bump_version: invalid version type: %s", vtype))
 	}
-	return version, nil
+}
+
+// changeVersion takes a basic literal representing a string version, and
+// increments the version number per the given VersionType.
+func changeVersion(vtype VersionType, value string) (Version, error) {
+	versionNoQuotes := strings.Replace(value, "\"", "", -1)
+	version, err := Parse(versionNoQuotes)
+	if err != nil {
+		return Version{}, err
+	}
+	return Bump(version, vtype), nil
 }
 
 func findBasicLit(file *ast.File) (*ast.BasicLit, error) {
@@ -143,7 +165,7 @@ func findBasicLit(file *ast.File) (*ast.BasicLit, error) {
 			if strings.ToUpper(spec.Names[0].Name) == "VERSION" {
 				value, ok := spec.Values[0].(*ast.BasicLit)
 				if !ok || value.Kind != token.STRING {
-					return nil, fmt.Errorf("VERSION is not a string, was %#v\n", value.Value)
+					return nil, fmt.Errorf("bump_version: VERSION constant is not a string, was %#v", value.Value)
 				}
 				return value, nil
 			}
@@ -164,6 +186,8 @@ func writeFile(filename string, fset *token.FileSet, file *ast.File) error {
 	return cfg.Fprint(f, fset, file)
 }
 
+var errNoChanges = errors.New("bump_version: no changes made")
+
 func changeInFile(filename string, f func(*ast.BasicLit) error) error {
 	fset := token.NewFileSet()
 	parsedFile, err := parser.ParseFile(fset, filename, nil, parser.ParseComments)
@@ -172,19 +196,38 @@ func changeInFile(filename string, f func(*ast.BasicLit) error) error {
 	}
 	lit, err := findBasicLit(parsedFile)
 	if err != nil {
-		return fmt.Errorf("No Version const found in %s", filename)
+		return fmt.Errorf("bump_version: no Version const found in %s", filename)
 	}
-	if err := f(lit); err != nil {
+	funcErr := f(lit)
+	if funcErr != nil && funcErr != errNoChanges {
 		return err
+	}
+	if funcErr == errNoChanges {
+		return nil
 	}
 	writeErr := writeFile(filename, fset, parsedFile)
 	return writeErr
 }
 
+// GetInFile returns the version found in the file.
+func GetInFile(filename string) (Version, error) {
+	var version Version
+	err := changeInFile(filename, func(lit *ast.BasicLit) error {
+		versionNoQuotes := strings.Replace(lit.Value, "\"", "", -1)
+		var err error
+		version, err = Parse(versionNoQuotes)
+		if err != nil {
+			return err
+		}
+		return errNoChanges
+	})
+	return version, err
+}
+
 // SetInFile sets the version in filename to newVersion.
-func SetInFile(newVersion *Version, filename string) error {
+func SetInFile(newVersion Version, filename string) error {
 	return changeInFile(filename, func(lit *ast.BasicLit) error {
-		lit.Value = fmt.Sprintf("\"%s\"", newVersion.String())
+		lit.Value = fmt.Sprintf("%q", newVersion.String())
 		return nil
 	})
 }
@@ -192,15 +235,15 @@ func SetInFile(newVersion *Version, filename string) error {
 // BumpInFile finds a constant named VERSION, version, or Version in the file
 // with the given filename, increments the version per the given VersionType,
 // and writes the file back to disk. Returns the incremented Version object.
-func BumpInFile(vtype VersionType, filename string) (*Version, error) {
-	var version *Version
+func BumpInFile(vtype VersionType, filename string) (Version, error) {
+	var version Version
 	err := changeInFile(filename, func(lit *ast.BasicLit) error {
 		var err error
 		version, err = changeVersion(vtype, lit.Value)
 		if err != nil {
 			return err
 		}
-		lit.Value = fmt.Sprintf("\"%s\"", version.String())
+		lit.Value = fmt.Sprintf("%q", version.String())
 		return nil
 	})
 	return version, err
