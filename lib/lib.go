@@ -33,20 +33,22 @@ func ValidVersionType(vtype VersionType) bool {
 
 type Version struct {
 	Major int64
+	// May be "-1" to signify that this version field is unused.
 	Minor int64
 	Patch int64
 }
 
 func (v Version) String() string {
-	if v.Major >= 0 && v.Minor >= 0 && v.Patch >= 0 {
+	if v.Patch >= 0 {
 		return fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Patch)
-	} else if v.Major >= 0 && v.Minor >= 0 {
-		return fmt.Sprintf("%d.%d", v.Major, v.Minor)
-	} else if v.Major >= 0 {
-		return fmt.Sprintf("%d", v.Major)
-	} else {
-		return "%!s(INVALID_VERSION)"
 	}
+	if v.Minor >= 0 {
+		return fmt.Sprintf("%d.%d", v.Major, v.Minor)
+	}
+	if v.Major >= 0 {
+		return fmt.Sprintf("%d", v.Major)
+	}
+	return "%!s(INVALID_VERSION)"
 }
 
 // ParseVersion parses a version string of the forms "2", "2.3", or "0.10.11".
@@ -247,4 +249,21 @@ func BumpInFile(vtype VersionType, filename string) (Version, error) {
 		return nil
 	})
 	return version, err
+}
+
+// Less reports whether i is a lower version number than j.
+func Less(i, j Version) bool {
+	if i.Major < j.Major {
+		return true
+	}
+	if i.Major > j.Major {
+		return false
+	}
+	if i.Minor < j.Minor {
+		return true
+	}
+	if i.Minor > j.Minor {
+		return false
+	}
+	return i.Patch < j.Patch
 }
