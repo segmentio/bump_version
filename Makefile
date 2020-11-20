@@ -16,4 +16,4 @@ test: lint
 	go test -race ./... -timeout 1s
 
 release: install test
-	bump_version minor main.go
+	bump_version minor lib/lib.go
