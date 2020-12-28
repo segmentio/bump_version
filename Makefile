@@ -1,14 +1,12 @@
+SHELL = /bin/bash -o pipefail
 .PHONY: test
 
-STATICCHECK := $(shell command -v staticcheck)
+export PATH := $(PATH):/usr/local/meter/bin
 
 install:
 	go install ./...
 
 lint:
-ifndef STATICCHECK
-	go get -u honnef.co/go/tools/cmd/staticcheck
-endif
 	go vet ./...
 	staticcheck ./...
 
@@ -17,3 +15,9 @@ test: lint
 
 release: install test
 	bump_version minor lib/lib.go
+
+ci-install:
+	curl -s https://packagecloud.io/install/repositories/meter/public/script.deb.sh | sudo bash
+	sudo apt-get -qq -o=Dpkg::Use-Pty=0 install staticcheck
+
+ci: ci-install lint test
