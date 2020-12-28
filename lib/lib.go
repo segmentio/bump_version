@@ -18,9 +18,11 @@ const VERSION = "2.1"
 
 type VersionType string
 
-const Major = VersionType("major")
-const Minor = VersionType("minor")
-const Patch = VersionType("patch")
+const (
+	Major = VersionType("major")
+	Minor = VersionType("minor")
+	Patch = VersionType("patch")
+)
 
 func ValidVersionType(vtype VersionType) bool {
 	switch vtype {
@@ -51,12 +53,12 @@ func (v Version) String() string {
 	return "%!s(INVALID_VERSION)"
 }
 
-// ParseVersion parses a version string of the forms "2", "2.3", or "0.10.11".
-// Any information after the third number ("2.0.0-beta") is discarded. Very
-// little effort is taken to validate the input.
+// Parse parses a version string of the forms "2", "2.3", or "0.10.11". Any
+// information after the third number ("2.0.0-beta") is discarded. Very little
+// effort is taken to validate the input.
 //
 // If a field is omitted from the string version (e.g. "0.2"), it's stored in
-// the Version string as the integer -1.
+// the Version struct as the integer -1.
 func Parse(version string) (Version, error) {
 	if len(version) == 0 {
 		return Version{}, errors.New("bump_version: empty version string")
