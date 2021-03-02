@@ -160,22 +160,25 @@ func changeVersion(vtype VersionType, value string) (Version, error) {
 
 func findBasicLit(file *ast.File) (*ast.BasicLit, error) {
 	for _, decl := range file.Decls {
-		switch gd := decl.(type) {
-		case *ast.GenDecl:
-			if gd.Tok != token.CONST {
-				continue
-			}
-			spec, _ := gd.Specs[0].(*ast.ValueSpec)
-			if strings.ToUpper(spec.Names[0].Name) == "VERSION" {
-				value, ok := spec.Values[0].(*ast.BasicLit)
-				if !ok || value.Kind != token.STRING {
-					return nil, fmt.Errorf("bump_version: VERSION constant is not a string, was %#v", value.Value)
-				}
-				return value, nil
-			}
-		default:
+		gd, ok := decl.(*ast.GenDecl)
+		if !ok {
 			continue
 		}
+		if gd.Tok != token.CONST && gd.Tok != token.VAR {
+			continue
+		}
+		spec, ok := gd.Specs[0].(*ast.ValueSpec)
+		if !ok {
+			continue
+		}
+		if strings.ToUpper(spec.Names[0].Name) != "VERSION" {
+			continue
+		}
+		value, ok := spec.Values[0].(*ast.BasicLit)
+		if !ok || value.Kind != token.STRING {
+			return nil, fmt.Errorf("bump_version: VERSION constant is not a string, was %#v", value.Value)
+		}
+		return value, nil
 	}
 	return nil, errors.New("bump_version: No version const found")
 }
