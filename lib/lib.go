@@ -167,18 +167,26 @@ func findBasicLit(file *ast.File) (*ast.BasicLit, error) {
 		if gd.Tok != token.CONST && gd.Tok != token.VAR {
 			continue
 		}
-		spec, ok := gd.Specs[0].(*ast.ValueSpec)
-		if !ok {
-			continue
+		// for loop is necessary to handle e.g.
+		//
+		// var (
+		//    blah = 3
+		//    version = "patch"
+		// )
+		for i := range gd.Specs {
+			spec, ok := gd.Specs[i].(*ast.ValueSpec)
+			if !ok {
+				continue
+			}
+			if strings.ToUpper(spec.Names[0].Name) != "VERSION" {
+				continue
+			}
+			value, ok := spec.Values[0].(*ast.BasicLit)
+			if !ok || value.Kind != token.STRING {
+				return nil, fmt.Errorf("bump_version: VERSION constant is not a string, was %#v", value.Value)
+			}
+			return value, nil
 		}
-		if strings.ToUpper(spec.Names[0].Name) != "VERSION" {
-			continue
-		}
-		value, ok := spec.Values[0].(*ast.BasicLit)
-		if !ok || value.Kind != token.STRING {
-			return nil, fmt.Errorf("bump_version: VERSION constant is not a string, was %#v", value.Value)
-		}
-		return value, nil
 	}
 	return nil, errors.New("bump_version: No version const found")
 }
