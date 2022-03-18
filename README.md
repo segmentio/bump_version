@@ -46,8 +46,8 @@ If any of these steps fail, `bump_version` will abort.
 
 ## Notes
 
-The VERSION should be a string in one of these formats: "3", "0.3",
-"0.3.4". Any prefixes like "v" or suffixes like "0.3.3-beta" will be
+The VERSION in the Go file should be a string in one of these formats: "3",
+"0.3", "0.3.4". Any prefixes like "v" or suffixes like "0.3.3-beta" will be
 stripped or generate an error.
 
 - `"v0.1"` - parse error, no prefixes allowed.
@@ -56,6 +56,9 @@ stripped or generate an error.
 - `bump_version("0.1", "major")` -> "1.1"
 - `bump_version("0.1-beta", "major")` -> "1.1"
 - `bump_version("devel", "major")` -> parse error.
+
+To add a prefix to the Git tag, add the `--tag-prefix` flag, for example
+`--tag-prefix=v` will generate a Git tag that looks like "v1.2.3".
 
 We use the VERSION in code exclusively - any existing git tags are ignored.
 

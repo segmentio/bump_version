@@ -27,6 +27,7 @@ func runCommand(binary string, args ...string) {
 
 func _main(flags *flag.FlagSet, cmdArgs []string) int {
 	var vsn = flags.String("version", "", "Set this version in the file (don't increment whatever version is present)")
+	var tagPrefix = flags.String("tag-prefix", "", "Attach this prefix to Git tags")
 	if err := flags.Parse(cmdArgs); err != nil {
 		flags.Usage()
 		return 2
@@ -69,7 +70,7 @@ func _main(flags *flag.FlagSet, cmdArgs []string) int {
 	}
 	runCommand("git", "add", filename)
 	runCommand("git", "commit", "-m", version.String())
-	runCommand("git", "tag", version.String(), "--annotate", "--message", version.String())
+	runCommand("git", "tag", *tagPrefix+version.String(), "--annotate", "--message", *tagPrefix+version.String())
 	os.Stdout.WriteString(version.String() + "\n")
 	return 0
 }
