@@ -14,7 +14,9 @@ test: lint
 	go test -race ./... -timeout 1s
 
 release: install test
-	bump_version minor lib/lib.go
+	next=$$(next_version minor lib/lib.go) && \
+		 bump_version minor lib/lib.go && \
+		 git tag "v$${next}"
 
 ci-install:
 	curl -s https://packagecloud.io/install/repositories/meter/public/script.deb.sh | sudo bash
