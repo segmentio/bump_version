@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-const VERSION = "2.4"
+const VERSION = "2.5"
 
 type VersionType string
 
