@@ -7,7 +7,9 @@ This is a tool for bumping version numbers in Go files.
 For the moment, you'll need a working Go installation.
 
 ```
-go get github.com/kevinburke/bump_version
+go install github.com/kevinburke/bump_version@latest
+go install github.com/kevinburke/bump_version/current_version@latest
+go install github.com/kevinburke/bump_version/next_version@latest
 ```
 
 That will install the `bump_version` binary to your `$GOPATH`.
@@ -43,6 +45,26 @@ version number, `bump_version minor` will increment the middle version number,
 6. Tag the new version.
 
 If any of these steps fail, `bump_version` will abort.
+
+#### current_version
+
+This program will retrieve the current version from a Go source file.
+
+```
+# current_version main.go
+0.6.0
+```
+
+#### next_version
+
+This program will retrieve the current version from a Go source file, and then
+print out the result of incrementing it (without actually making any changes).
+
+```
+# next_version patch main.go
+0.6.1
+```
+
 
 ## Notes
 
