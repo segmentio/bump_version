@@ -1,3 +1,3 @@
-module github.com/kevinburke/bump_version
+module github.com/segmentio/bump_version
 
 go 1.18
