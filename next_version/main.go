@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	bump_version "github.com/kevinburke/bump_version/lib"
+	bump_version "github.com/segmentio/bump_version/lib"
 )
 
 func usage() {

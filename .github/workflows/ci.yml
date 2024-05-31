@@ -10,7 +10,7 @@ jobs:
         go-version: 1.22.x
     - uses: actions/checkout@v4
       with:
-         path: './src/github.com/kevinburke/bump_version'
+         path: './src/github.com/segmentio/bump_version'
     - uses: actions/cache@v4
       with:
         path: /home/runner/.cache
@@ -24,7 +24,7 @@ jobs:
         echo "DEBIAN_FRONTEND=noninteractive" >> $GITHUB_ENV
     - name: Download dependencies
       run: go get -t -v ./...
-      working-directory: './src/github.com/kevinburke/bump_version'
+      working-directory: './src/github.com/segmentio/bump_version'
     - name: Run tests
       run: make ci
-      working-directory: './src/github.com/kevinburke/bump_version'
+      working-directory: './src/github.com/segmentio/bump_version'
